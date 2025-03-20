@@ -11,14 +11,15 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "OnlineSubsystem.h"
-#include "Interfaces/OnlineSessionInterface.h"
+#include "OnlineSessionSettings.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
 // AMPMenuSystemCharacter
 
-AMPMenuSystemCharacter::AMPMenuSystemCharacter()
+AMPMenuSystemCharacter::AMPMenuSystemCharacter():
+	createSessionCompleteDelgate(FOnCreateSessionCompleteDelegate::CreateUObject(this, &ThisClass::OnCreateSessionComplete))
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -109,6 +110,70 @@ void AMPMenuSystemCharacter::SetupPlayerInputComponent(UInputComponent* PlayerIn
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
+	}
+}
+
+//Called when pressing the 1 key from blueprints
+//Creates the online game session
+void AMPMenuSystemCharacter::CreateGameSession()
+{
+	if (!onlineSessionInterface.IsValid())
+	{
+		return;
+	}
+
+	//Destroy any existing sessions
+	auto existingSession = onlineSessionInterface->GetNamedSession(NAME_GameSession);
+	if (existingSession != nullptr)
+	{
+		onlineSessionInterface->DestroySession(NAME_GameSession);
+	}
+
+	//Add our delegate to the session interface delegate list
+	onlineSessionInterface->AddOnCreateSessionCompleteDelegate_Handle(createSessionCompleteDelgate);
+
+	//Define our session settings
+	TSharedPtr<FOnlineSessionSettings> sessionSettings = MakeShareable(new FOnlineSessionSettings()); //Create a session settings object
+	sessionSettings->bIsLANMatch = false;
+	sessionSettings->NumPublicConnections = 4;
+	sessionSettings->bAllowJoinInProgress = true;
+	sessionSettings->bAllowJoinViaPresence = true;
+	sessionSettings->bShouldAdvertise = true;
+	sessionSettings->bUsesPresence = true;
+	sessionSettings->bUseLobbiesIfAvailable = true;
+
+	//Create the new session
+	const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController(); //Get the hosting player so we can use their id
+	onlineSessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, *sessionSettings);
+
+}
+
+//Triigers when the online game session is complete
+void AMPMenuSystemCharacter::OnCreateSessionComplete(FName sessionName, bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.0f,
+				FColor::Green,
+				FString::Printf(TEXT("Created session: %s"), *sessionName.ToString())
+			);
+		}
+	}
+	else
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,
+				15.0f,
+				FColor::Red,
+				FString(TEXT("Failed to create session!"))
+			);
+		}
 	}
 }
 
