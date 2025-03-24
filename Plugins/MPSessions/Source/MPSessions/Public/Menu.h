@@ -18,7 +18,7 @@ class MPSESSIONS_API UMenu : public UUserWidget
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void MenuSetup(int32 _numOfPublicConnections = 4, FString _matchType = FString(TEXT("FreeForAll")));
+	void MenuSetup(int32 _numOfPublicConnections = 4, FString _matchType = FString(TEXT("FreeForAll")), FString _lobbyPath = FString(TEXT("/Game/ThirdPerson/Maps/NewLobby")));
 
 protected: 
 
@@ -56,4 +56,5 @@ private:
 
 	int32 numPublicConnections{ 4 };
 	FString matchType{ TEXT("FreeForAll") };
+	FString pathToLobby{ TEXT("") };
 };
