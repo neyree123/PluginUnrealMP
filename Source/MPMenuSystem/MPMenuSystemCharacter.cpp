@@ -60,22 +60,22 @@ AMPMenuSystemCharacter::AMPMenuSystemCharacter():
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
 	//TODO - Move to online subsytem class eventually
-	IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get();
-	if (onlineSubsystem)
-	{
-		//Access the Session Interface
-		onlineSessionInterface = onlineSubsystem->GetSessionInterface();
+	//IOnlineSubsystem* onlineSubsystem = IOnlineSubsystem::Get();
+	//if (onlineSubsystem)
+	//{
+	//	//Access the Session Interface
+	//	onlineSessionInterface = onlineSubsystem->GetSessionInterface();
 
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(
-				-1,
-				15.f,
-				FColor::Blue,
-				FString::Printf(TEXT("Found subsystem %s"), *onlineSubsystem->GetSubsystemName().ToString())
-			);
-		}
-	}
+	//	if (GEngine)
+	//	{
+	//		GEngine->AddOnScreenDebugMessage(
+	//			-1,
+	//			15.f,
+	//			FColor::Blue,
+	//			FString::Printf(TEXT("Found subsystem %s"), *onlineSubsystem->GetSubsystemName().ToString())
+	//		);
+	//	}
+	//}
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -45,6 +45,7 @@ void UMPSessionsSubsystem::CreateGameSession(int32 numPublicConnections, FString
 	lastSessionSettings->bShouldAdvertise = true;
 	lastSessionSettings->bUsesPresence = true;
 	lastSessionSettings->bUseLobbiesIfAvailable = true;
+	lastSessionSettings->BuildUniqueId = 1;
 	lastSessionSettings->Set(FName("matchType"), matchType, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 	//Create the new session
