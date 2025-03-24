@@ -61,10 +61,44 @@ void UMPSessionsSubsystem::CreateGameSession(int32 numPublicConnections, FString
 
 void UMPSessionsSubsystem::FindSessions(int32 maxSearchResults)
 {
+	if (!sessionInterface.IsValid())
+	{
+		return;
+	}
+
+	findSessionsCompleteDelegateHandle = sessionInterface->AddOnFindSessionsCompleteDelegate_Handle(findSessionsCompleteDelegate);
+
+	lastSessionSearch = MakeShareable(new FOnlineSessionSearch());
+	lastSessionSearch->MaxSearchResults = maxSearchResults;
+	lastSessionSearch->bIsLanQuery = IOnlineSubsystem::Get()->GetSubsystemName() == "NULL" ? true : false;
+	lastSessionSearch->QuerySettings.Set(SEARCH_LOBBIES, true, EOnlineComparisonOp::Equals);
+
+	//Find Sessions
+	const ULocalPlayer* localPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	if (!sessionInterface->FindSessions(*localPlayer->GetPreferredUniqueNetId(), lastSessionSearch.ToSharedRef()))
+	{
+		//If no session found remove our delegate
+		sessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(findSessionsCompleteDelegateHandle);
+		MPOnFindSessionComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+	}
 }
 
 void UMPSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult& sessionResult)
 {
+	if (!sessionInterface.IsValid())
+	{
+		MPOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+		return;
+	}
+
+	joinSessionCompleteDelegateHandle = sessionInterface->AddOnJoinSessionCompleteDelegate_Handle(joinSessionCompleteDelegate);
+
+	const ULocalPlayer* localPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+	if (sessionInterface->JoinSession(*localPlayer->GetPreferredUniqueNetId(), NAME_GameSession, sessionResult))
+	{
+		sessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(joinSessionCompleteDelegateHandle);
+		MPOnJoinSessionComplete.Broadcast(EOnJoinSessionCompleteResult::UnknownError);
+	}
 }
 
 void UMPSessionsSubsystem::DestroySession()
@@ -87,10 +121,28 @@ void UMPSessionsSubsystem::OnCreateSessionComplete(FName sessionName, bool bWasS
 
 void UMPSessionsSubsystem::OnFindSessionsComplete(bool bWasSuccessful)
 {
+	if (sessionInterface)
+	{
+		sessionInterface->ClearOnFindSessionsCompleteDelegate_Handle(findSessionsCompleteDelegateHandle);
+	}
+
+	if (lastSessionSearch->SearchResults.Num() <= 0)
+	{
+		MPOnFindSessionComplete.Broadcast(TArray<FOnlineSessionSearchResult>(), false);
+		return;
+	}
+
+	MPOnFindSessionComplete.Broadcast(lastSessionSearch->SearchResults, bWasSuccessful);
 }
 
 void UMPSessionsSubsystem::OnJoinSessionComplete(FName sessionName, EOnJoinSessionCompleteResult::Type result)
 {
+	if (sessionInterface)
+	{
+		sessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(joinSessionCompleteDelegateHandle);
+	}
+
+	MPOnJoinSessionComplete.Broadcast(result);
 }
 
 void UMPSessionsSubsystem::OnDestroySessionComplete(FName sessionName, bool bWasSuccessful)

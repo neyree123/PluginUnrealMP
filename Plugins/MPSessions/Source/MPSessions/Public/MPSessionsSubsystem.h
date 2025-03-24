@@ -12,6 +12,10 @@
 // Declaring our own custom delegates for the Menu class to use
 //
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMPOnCreateSessionComplete, bool, bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FMPOnFindSessionComplete, const TArray<FOnlineSessionSearchResult>& sessionResults, bool bWasSuccessful);
+DECLARE_MULTICAST_DELEGATE_OneParam(FMPOnJoinSessionComplete, EOnJoinSessionCompleteResult::Type result);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMPOnDestroySessionComplete, bool, bWasSuccessful);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMPOnStartSessionComplete, bool, bWasSuccessful);
 
 /**
  * 
@@ -37,6 +41,10 @@ public:
 	//Our custom delegates for the Menu class
 	//
 	FMPOnCreateSessionComplete MPOnCreateSessionComplete;
+	FMPOnFindSessionComplete MPOnFindSessionComplete;
+	FMPOnJoinSessionComplete MPOnJoinSessionComplete;
+	FMPOnDestroySessionComplete MPOnDestroySessionComplete;
+	FMPOnStartSessionComplete MPOnStartSessionComplete;
 
 protected:
 
@@ -53,6 +61,7 @@ protected:
 private:
 	IOnlineSessionPtr sessionInterface;
 	TSharedPtr<FOnlineSessionSettings> lastSessionSettings;
+	TSharedPtr<FOnlineSessionSearch> lastSessionSearch;
 
 	//
 	// To add to the Online Session Interface delegate lists
