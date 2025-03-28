@@ -105,6 +105,8 @@ void UMenu::OnCreateSession(bool bWasSuccessful)
 				FString(TEXT("Failed to Create Session"))
 			);
 		}
+
+		HostButton->SetIsEnabled(true);
 	}
 }
 
@@ -127,6 +129,11 @@ void UMenu::OnFindSession(const TArray<FOnlineSessionSearchResult>& sessionResul
 			MPSessionSubsystem->JoinSession(result);
 			return;
 		}
+	}
+
+	if (!bWasSuccessful || sessionResults.Num() == 0)
+	{
+		JoinButton->SetIsEnabled(true);
 	}
 }
 
@@ -151,6 +158,11 @@ void UMenu::OnJoinSession(EOnJoinSessionCompleteResult::Type result)
 			}
 		}
 	}
+
+	if (result != EOnJoinSessionCompleteResult::Success)
+	{
+		JoinButton->SetIsEnabled(true);
+	}
 }
 
 void UMenu::OnDestroySession(bool bWasSuccessful)
@@ -163,6 +175,7 @@ void UMenu::OnStartSession(bool bWasSuccessful)
 
 void UMenu::HostButtonClicked()
 {
+	HostButton->SetIsEnabled(false);
 	if (MPSessionSubsystem)
 	{
 		MPSessionSubsystem->CreateGameSession(numPublicConnections, matchType);
@@ -171,6 +184,7 @@ void UMenu::HostButtonClicked()
 
 void UMenu::JoinButtonClicked()
 {
+	JoinButton->SetIsEnabled(false);
 	if (MPSessionSubsystem)
 	{
 		MPSessionSubsystem->FindSessions(10000);

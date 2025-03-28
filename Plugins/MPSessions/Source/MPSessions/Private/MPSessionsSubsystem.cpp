@@ -30,7 +30,11 @@ void UMPSessionsSubsystem::CreateGameSession(int32 numPublicConnections, FString
 	auto existingSession = sessionInterface->GetNamedSession(NAME_GameSession);
 	if (existingSession)
 	{
-		sessionInterface->DestroySession(NAME_GameSession);
+		bCreateSessionOnDestroy = true;
+		lastNumPublicConnections = numPublicConnections;
+		lastMatchType = matchType;
+
+		DestroySession();
 	}
 
 	//Add our delegate to the session interface delegate list
@@ -104,6 +108,19 @@ void UMPSessionsSubsystem::JoinSession(const FOnlineSessionSearchResult& session
 
 void UMPSessionsSubsystem::DestroySession()
 {
+	if (!sessionInterface.IsValid())
+	{
+		MPOnCreateSessionComplete.Broadcast(false);
+		return;
+	}
+
+	destroySessionCompleteDelegateHandle = sessionInterface->AddOnDestroySessionCompleteDelegate_Handle(destroySessionCompleteDelegate);
+
+	if (!sessionInterface->DestroySession(NAME_GameSession))
+	{
+		sessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(destroySessionCompleteDelegateHandle);
+		MPOnCreateSessionComplete.Broadcast(false);
+	}
 }
 
 void UMPSessionsSubsystem::StartSession()
@@ -148,6 +165,18 @@ void UMPSessionsSubsystem::OnJoinSessionComplete(FName sessionName, EOnJoinSessi
 
 void UMPSessionsSubsystem::OnDestroySessionComplete(FName sessionName, bool bWasSuccessful)
 {
+	if (sessionInterface)
+	{
+		sessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(destroySessionCompleteDelegateHandle);
+	}
+
+	if (bWasSuccessful && bCreateSessionOnDestroy)
+	{
+		bCreateSessionOnDestroy = false;
+		CreateGameSession(lastNumPublicConnections, lastMatchType);
+	}
+
+	MPOnDestroySessionComplete.Broadcast(bWasSuccessful);
 }
 
 void UMPSessionsSubsystem::OnStartSessionComplete(FName sessionName, bool bWasSuccessful)
